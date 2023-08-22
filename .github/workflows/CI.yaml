@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v3
         
       - name: 'Install dependencies'
-        uses: npn install
+        run: npn install
 
       - name: 'Run linter'
         run: npx standard -v
