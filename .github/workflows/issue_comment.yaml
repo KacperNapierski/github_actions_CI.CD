@@ -5,8 +5,8 @@ on:
     types: [opened]
 jobs:
   comment-with-action:
-  runs-on: ubuntu-latest
-  steps:
-    - name: github context
-      run: echo '${{toJSON(github.event) }}' | jq
-      shell: bash
+    runs-on: ubuntu-latest
+    steps:
+      - name: github context
+        run: echo '${{toJSON(github.event) }}' | jq
+        shell: bash
