@@ -1,7 +1,7 @@
 name: Create comment on new issue
 
 on:
-  issue:
+  issues:
     types: [opened]
 jobs:
   comment-with-action:
