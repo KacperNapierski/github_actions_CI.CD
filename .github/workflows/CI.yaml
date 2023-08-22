@@ -41,10 +41,4 @@ jobs:
       - name: 'Run linter'
         run: npx standard -v
 
-  deploy:
-    environment: staging
-    name: 'Deploy to staging'
-    needs: ['tests', 'linter']
-    runs-on: ubuntu-latest
-
 
