@@ -19,7 +19,7 @@ jobs:
         shell: bash
 
   goodbye:
-    runs-on: [ubuntu-latest, windows]
+    runs-on: ubuntu-latest
     steps:
       - name: goodbye
         run: echo "Goodbye world"
