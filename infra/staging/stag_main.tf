@@ -3,7 +3,7 @@ terraform {
 
   required_providers {
     aws = {
-      source = "hashicorp/aws"
+      source  = "hashicorp/aws"
       version = "5.13.1"
     }
   }
@@ -11,7 +11,7 @@ terraform {
 
 provider "aws" {
   region = "eu-central-1"
-  profile = "default"
+  #profile = "default"
 }
 
 variable "ami_id" {
@@ -21,10 +21,10 @@ variable "ami_id" {
 
 
 resource "aws_instance" "app_server" {
-  ami           = vars.ami_id
+  ami           = var.ami_id
   instance_type = "t2.micro"
 
   tags = {
     Name = "ExampleAppServerInstance"
-    }
+  }
 }
