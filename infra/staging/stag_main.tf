@@ -28,11 +28,15 @@ variable "ami_id" {
 }
 
 
-resource "aws_instance" "app_server" {
+resource "aws_instance" "Staging" {
   ami           = var.ami_id
   instance_type = "t2.micro"
 
   tags = {
-    Name = "ExampleAppServerInstance"
+    Name = "Staging"
   }
+}
+
+output "Staging_dns" {
+  value = aws_instance.Staging.public_dns
 }

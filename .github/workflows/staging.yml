@@ -30,6 +30,13 @@ jobs:
         terraform_version: 1.1.7
         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }} #TODO add token to secrets
 
+#    - name: 'Create staging environment resource file'
+#      id: create_resource_file
+#      working-directory: infra/instances/staging/
+#      run: |
+#      OUTPUT="$(./create_staging_resource.sh PR_${{ github.event.inputs.PR_number }} | jq -r .terraform_expected_output)"
+#      echo "::set-output name=STAGING_RESOURCE_NAME::$OUTPUT"
+
     - name: Terraform Init and Validate
       id: init
       working-directory: infra/staging/
@@ -52,10 +59,10 @@ jobs:
       working-directory: infra/staging/
       run: terraform apply -auto-approve
 
-    - name: Terraform Output
-      id: apply_output
-      working-directory: infra/staging/
-      run: terraform output -raw -no-color ${{ steps.create_resource_file.outputs.STAGING_RESOURCE_NAME }}
+#    - name: Terraform Output
+#      id: apply_output
+#      working-directory: infra/staging/
+#      run: terraform output -raw -no-color ${{ steps.create_resource_file.outputs.STAGING_RESOURCE_NAME }}
 
     - name: Commit terraform resource files to the PReps.verify_pr_number.outputs.result 
       working-directory: infra/instances/staging/
