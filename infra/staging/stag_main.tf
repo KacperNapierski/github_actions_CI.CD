@@ -7,6 +7,14 @@ terraform {
       version = "5.13.1"
     }
   }
+
+  cloud {
+    organization = "Learning_Corp"
+
+    workspaces {
+      name = "github_actions_CI_CD"
+    }
+  }
 }
 
 provider "aws" {
