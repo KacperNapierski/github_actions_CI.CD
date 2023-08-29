@@ -1,2 +1,5 @@
-infra/staging/.terraform
-infra/staging/terraform
+**/.terraform/
+
+# .tfstate files
+**/*.tfstate
+**/*.tfstate.*
