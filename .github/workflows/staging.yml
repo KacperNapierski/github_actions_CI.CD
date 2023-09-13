@@ -1,0 +1,120 @@
+name: Create Dev Staging Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      PR_number:
+        description: 'Pull request number'
+        required: true
+
+jobs:
+  create:
+    name: 'Create staging and deploy'
+    defaults:
+      run:
+        shell: bash
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+    # PR number verify
+
+    - uses: actions/chechout@v3
+      name: "checkout"
+      with:
+        ref: KacperNapierski/IaaC
+
+    - name: setup terraform
+      uses: hashicorp/setup-terraform@v2.0.3
+      with:
+        terraform_version: 1.1.7
+        cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }} #TODO add token to secrets
+
+#    - name: 'Create staging environment resource file'
+#      id: create_resource_file
+#      working-directory: infra/instances/staging/
+#      run: |
+#      OUTPUT="$(./create_staging_resource.sh PR_${{ github.event.inputs.PR_number }} | jq -r .terraform_expected_output)"
+#      echo "::set-output name=STAGING_RESOURCE_NAME::$OUTPUT"
+
+    - name: Terraform Init and Validate
+      id: init
+      working-directory: infra/staging/
+      run: |
+        terraform init
+        terraform validate -no-color
+
+    - name: Terraform Plan
+      id: plan
+      run: terraform plan -no-color
+      working-directory: infra/staging/
+      continue-on-error: true
+
+    - name: Terraform Plan Status
+      if: steps.plan.outcome == 'failure'
+      run: exit 1
+
+    - name: Terraform Apply
+      id: apply
+      working-directory: infra/staging/
+      run: terraform apply -auto-approve
+
+#    - name: Terraform Output
+#      id: apply_output
+#      working-directory: infra/staging/
+#      run: terraform output -raw -no-color ${{ steps.create_resource_file.outputs.STAGING_RESOURCE_NAME }}
+
+    - name: Commit terraform resource files to the PReps.verify_pr_number.outputs.result 
+      working-directory: infra/instances/staging/
+      run: |
+        git config --global user.name '${{ github.actor }}'
+        git config --global user.email '${{ github.actor}}@users.noreply.github.com'
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+        git add ./\*.tf
+        git commit -m "Add terraform resource files" && \
+          git push || echo "Nothing to commit"
+
+    - uses: actions/checkout@v2
+      name: 'Checkout PR branch'
+      with:
+        ref: ${{ github.event.inputs.PR_number }}
+
+    - uses: burnett01/rsync-deployments@6.0.0
+      name: 'Deploy to staging'
+      with:
+        switches: -avzr --delete
+        path: ./web
+        remote_path: /var/app
+        remote_host: ${{ steps.apply_output.outputs.stdout }}
+        remote_user: ${{ secrets.REMOTE_USER }}
+        remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+    - uses: JimCronqvist/action-ssh@1.0.0
+      name: Execute SSH commmands on remote server
+      with:
+        hosts: '${{ secrets.REMOTE_USER }}@${{ steps.apply_output.outputs.stdout }}'
+        privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+        command: |
+          cd /var/app/web
+          npm ci
+          pm2 start /var/app/web/bin/www || pm2 restart /var/app/web/bin/www
+          sudo service nginx restart
+
+    - name: Update status
+      uses: actions/github-script@v5
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const output = `#### Staging server created
+          > PR #${{ github.event.inputs.PR_number }} has been deployed successfully
+          
+          URL: http://${{ steps.apply_output.outputs.stdout }}`;
+
+          github.rest.issues.createComment({
+            issue_number: ${{ github.event.inputs.PR_number }},
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          })
+
+            
